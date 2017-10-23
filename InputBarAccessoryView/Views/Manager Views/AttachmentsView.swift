@@ -45,7 +45,8 @@ open class AttachmentsView: UICollectionView {
         layout.minimumLineSpacing = 0
         layout.sectionInset.top = 5
         layout.sectionInset.bottom = 5
-        layout.footerReferenceSize = CGSize(width: 5, height: 0)
+        layout.headerReferenceSize = CGSize(width: 12, height: 0)
+        layout.footerReferenceSize = CGSize(width: 12, height: 0)
         super.init(frame: .zero, collectionViewLayout: layout)
         setup()
     }
@@ -62,12 +63,8 @@ open class AttachmentsView: UICollectionView {
         backgroundColor = .white
         alwaysBounceHorizontal = true
         showsHorizontalScrollIndicator = true
-        register(UICollectionViewCell.self, forCellWithReuseIdentifier: "UICollectionViewCell")
+        setContentHuggingPriority(UILayoutPriority.defaultHigh, for: .vertical)
+        register(AttachmentCell.self, forCellWithReuseIdentifier: "AttachmentCell")
         register(ImageAttachmentCell.self, forCellWithReuseIdentifier: ImageAttachmentCell.reuseIdentifier)
-    }
-    
-    open override func layoutSubviews() {
-        super.layoutSubviews()
-//        addBorder(side: .top, thickness: 0.5, color: .lightGray)
     }
 }

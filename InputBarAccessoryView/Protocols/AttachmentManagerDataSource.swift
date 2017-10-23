@@ -1,5 +1,5 @@
 //
-//  AttachmentCell.swift
+//  AttachmentManagerDataSource.swift
 //  InputBarAccessoryView
 //
 //  Copyright © 2017 Nathan Tannar.
@@ -22,16 +22,20 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 //
-//  Created by Nathan Tannar on 10/4/17.
+//  Created by Nathan Tannar on 10/6/17.
 //
 
-import UIKit
+import Foundation
 
-public protocol AttachmentCell {
+/// AttachmentManagerDataSource is a protocol to passes data to the AttachmentManager
+public protocol AttachmentManagerDataSource: class {
     
-    var indexPath: IndexPath? { get set }
-    
-    var removeButton: UIButton { get set }
-    
-    weak var manager: AttachmentManager? { get set }
+    /// The AttachmentCell for the attachment that is to be inserted into the AttachmentView
+    ///
+    /// - Parameters:
+    ///   - manager: The AttachmentManager
+    ///   - attachment: The object
+    ///   - index: The index in the AttachmentView
+    /// - Returns: An AttachmentCell
+    func attachmentManager(_ manager: AttachmentManager, cellFor attachment: AnyObject, at index: Int) -> AttachmentCell
 }

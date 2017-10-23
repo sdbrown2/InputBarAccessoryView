@@ -28,18 +28,32 @@
 import Foundation
 import UIKit
 
+/**
+ A UITextView can has a UILabel embedded for placeholder text
+ 
+ ## Important Notes ##
+ 1. Changing the font, textAlignment or textContainerInset automatically performs the same modifications to the placeholderLabel
+ 2. Intended to be used in an `InputBarAccessoryView`
+ 3. Default placeholder text is "Aa"
+ 4. Will pass a pasted image it's `InputBarAccessoryView`'s `InputManager`s
+ */
 open class InputTextView: UITextView {
     
     // MARK: - Properties
     
     open override var text: String! {
         didSet {
-            resetTypingAttributes()
             textViewTextDidChange()
-            highlightSubstrings(with: previousPrefixCharacters)
+        }
+    }
+    
+    open override var attributedText: NSAttributedString! {
+        didSet {
+            textViewTextDidChange()
         }
     }
 
+    /// A UILabel that holds the InputTextView's placeholder text
     open let placeholderLabel: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0
@@ -50,36 +64,42 @@ open class InputTextView: UITextView {
         return label
     }()
     
+    /// The placeholder text that appears when there is no text
     open var placeholder: String? = "Aa" {
         didSet {
             placeholderLabel.text = placeholder
         }
     }
     
+    /// The placeholderLabel's textColor
     open var placeholderTextColor: UIColor? = .lightGray {
         didSet {
             placeholderLabel.textColor = placeholderTextColor
         }
     }
     
+    /// The UIEdgeInsets the placeholderLabel has within the InputTextView
     open var placeholderLabelInsets: UIEdgeInsets = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4) {
         didSet {
             updateConstraintsForPlaceholderLabel()
         }
     }
     
-    override open var font: UIFont! {
+    /// The font of the InputTextView. When set the placeholderLabel's font is also updated
+    open override var font: UIFont! {
         didSet {
             placeholderLabel.font = font
         }
     }
     
-    override open var textAlignment: NSTextAlignment {
+    /// The textAlignment of the InputTextView. When set the placeholderLabel's textAlignment is also updated
+    open override var textAlignment: NSTextAlignment {
         didSet {
             placeholderLabel.textAlignment = textAlignment
         }
     }
     
+    /// The textContainerInset of the InputTextView. When set the placeholderLabelInsets is also updated
     open override var textContainerInset: UIEdgeInsets {
         didSet {
             placeholderLabelInsets = textContainerInset
@@ -98,19 +118,10 @@ open class InputTextView: UITextView {
         }
     }
     
-    open lazy var defaultTextAttributes: [NSAttributedStringKey:Any] = { [weak self] in
-        return [NSAttributedStringKey.font : font,
-                NSAttributedStringKey.foregroundColor : UIColor.black]
-    }()
-    
-    open lazy var highlightedTextAttributes: [NSAttributedStringKey:Any] = { [weak self] in
-        return [NSAttributedStringKey.foregroundColor : tintColor,
-                NSAttributedStringKey.backgroundColor : tintColor.withAlphaComponent(0.2)]
-    }()
-    
+    /// A weak reference to the InputBarAccessoryView that the InputTextView is contained within
     open weak var inputBarAccessoryView: InputBarAccessoryView?
     
-    private var previousPrefixCharacters = [Character]()
+    /// The constraints of the placeholderLabel
     private var placeholderLabelConstraintSet: NSLayoutConstraintSet?
  
     // MARK: - Initializers
@@ -119,7 +130,7 @@ open class InputTextView: UITextView {
         self.init(frame: .zero)
     }
     
-    override public init(frame: CGRect, textContainer: NSTextContainer?) {
+    public override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
         setup()
     }
@@ -133,42 +144,45 @@ open class InputTextView: UITextView {
         NotificationCenter.default.removeObserver(self)
     }
     
+    // MARK: - Setup
+    
+    /// Sets up the default properties
     open func setup() {
         
+        backgroundColor = .clear
         font = UIFont.preferredFont(forTextStyle: .body)
         isScrollEnabled = false
         scrollIndicatorInsets = UIEdgeInsets(top: .leastNonzeroMagnitude,
                                              left: .leastNonzeroMagnitude,
                                              bottom: .leastNonzeroMagnitude,
                                              right: .leastNonzeroMagnitude)
-        addSubviews()
         addObservers()
-        addConstraints()
+        addPlaceholderLabel()
     }
     
-    private func addSubviews() {
+    /// Adds the placeholderLabel to the view and sets up its initial constraints
+    private func addPlaceholderLabel() {
         
         addSubview(placeholderLabel)
-    }
-    
-    private func addConstraints() {
-        
         placeholderLabelConstraintSet = NSLayoutConstraintSet(
             top:    placeholderLabel.topAnchor.constraint(equalTo: topAnchor, constant: placeholderLabelInsets.top),
             bottom: placeholderLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -placeholderLabelInsets.bottom),
             left:   placeholderLabel.leftAnchor.constraint(equalTo: leftAnchor, constant: placeholderLabelInsets.left),
-            right:  placeholderLabel.rightAnchor.constraint(equalTo: rightAnchor, constant: -placeholderLabelInsets.right)
+            width:  placeholderLabel.widthAnchor.constraint(equalTo: widthAnchor, constant: -(placeholderLabelInsets.left + placeholderLabelInsets.right))
         ).activate()
     }
     
+    /// Updates the placeholderLabels constraint constants to match the placeholderLabelInsets
     private func updateConstraintsForPlaceholderLabel() {
         
         placeholderLabelConstraintSet?.top?.constant = placeholderLabelInsets.top
         placeholderLabelConstraintSet?.bottom?.constant = -placeholderLabelInsets.bottom
         placeholderLabelConstraintSet?.left?.constant = placeholderLabelInsets.left
-        placeholderLabelConstraintSet?.right?.constant = -placeholderLabelInsets.right
+        placeholderLabelConstraintSet?.width?.constant = -(placeholderLabelInsets.left + placeholderLabelInsets.right)
     }
     
+    /// Adds a notification for .UITextViewTextDidChange to detect when the placeholderLabel
+    /// should be hidden or shown
     private func addObservers() {
         
         NotificationCenter.default.addObserver(self,
@@ -189,85 +203,17 @@ open class InputTextView: UITextView {
     open override func paste(_ sender: Any?) {
         
         if let image = UIPasteboard.general.image {
-            insertImage(image, at: selectedRange)
+            inputBarAccessoryView?.inputManagers.forEach { $0.handleInput(of: image) }
         } else {
             super.paste(sender)
         }
     }
     
-    open func insertImage(_ image: UIImage, at range: NSRange) {
-        
-        let textAttachment = NSTextAttachment()
-        textAttachment.image = image
-        let scaleFactor = textAttachment.image!.size.width / (frame.size.width - 10)
-        textAttachment.image = UIImage(cgImage: textAttachment.image!.cgImage!, scale: scaleFactor, orientation: .up)
-        let attrStringWithImage = NSAttributedString(attachment: textAttachment)
-        let attributedString = NSMutableAttributedString(attributedString: attrStringWithImage)
-        attributedString.addAttributes(defaultTextAttributes, range: NSMakeRange(0, attributedString.length - 1))
-        textStorage.insert(attrStringWithImage, at: selectedRange.location)
-        layoutIfNeeded()
-    }
-    
-    // MARK: - Attributed Text Highlighting
-    
-    open func resetTypingAttributes() {
-        
-        var attrs = [String:Any]()
-        defaultTextAttributes.forEach { attrs[$0.key.rawValue] = $0.value }
-        typingAttributes = attrs
-    }
-    
-    /// Finds the ranges of all substrings that start with the provided prefixes and sets those ranges background color to the InputTextView's tintColor
-    ///
-    /// - Parameter prefixes: The prefix the substring must begin with
-    open func highlightSubstrings(with prefixes: [Character]) {
-        
-        previousPrefixCharacters = prefixes
-        let substrings = text.components(separatedBy: " ").filter {
-            var hasPrefix = false
-            for prefix in prefixes {
-                if $0.hasPrefix(String(prefix)) && $0.count > 1 {
-                    hasPrefix = true
-                    break
-                }
-            }
-            return hasPrefix
-        }
-        var ranges = [NSRange]()
-        substrings.map { return rangesOf($0, in: text) }.flatMap { return $0 }.forEach {
-            text.enumerateSubstrings(in: $0, options: .substringNotRequired) {
-                (substring, substringRange, _, _) in
-                let range = NSRange(substringRange, in: self.text)
-                ranges.append(range)
-            }
-        }
-        let attributedString = NSMutableAttributedString(string: text, attributes: defaultTextAttributes)
-        ranges.forEach { attributedString.addAttributes(highlightedTextAttributes, range: $0) }
-        attributedText = attributedString
-    }
-    
-    /// A helper method that returns all the ranges of a provided string in another string
-    ///
-    /// - Parameters:
-    ///   - string: Substrings to filter the ranges
-    ///   - text: The String to find ranges in
-    /// - Returns: The ranges of the string in text
-    private func rangesOf(_ string: String, in text: String) -> [Range<String.Index>] {
-        var ranges = [Range<String.Index>]()
-        var searchStartIndex = text.startIndex
-        
-        while searchStartIndex < text.endIndex, let range = text.range(of: string, range: searchStartIndex..<text.endIndex), !range.isEmpty {
-            ranges.append(range)
-            searchStartIndex = range.upperBound
-        }
-        return ranges
-    }
-
-    
     // MARK: - Notifications
     
-    @objc open func textViewTextDidChange() {
-        
+    /// Updates the placeholderLabel's isHidden property based on the text being empty or not
+    @objc
+    open func textViewTextDidChange() {
         placeholderLabel.isHidden = !text.isEmpty
     }
 }

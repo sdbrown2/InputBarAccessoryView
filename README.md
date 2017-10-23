@@ -1,10 +1,16 @@
 # InputBarAccessoryView
-<img src="./Assets/Banner.png">
+<img src="./Screenshots/Banner.png">
 
 ### Installation via CocoaPods
 
 ```ruby
 pod 'InputBarAccessoryView'
+```
+
+### Installation via Carthage
+
+```ruby
+github "nathantannar4/InputBarAccessoryView"
 ```
 
 ### Usage
@@ -22,30 +28,26 @@ iOS 9.0+
 Swift 4
 XCode 9.0+
 
+### Documentation
+
+[Jazzy Generated Docs](https://nathantannar.me/InputBarAccessoryView/docs/)
+
 ### Screenshots
 
-<img src="./Assets/ScreenshotA.png" width="242" height="432"> <img src="./Assets/ScreenshotB.png" width="242" height="432"> <img src="./Assets/ScreenshotC.png" width="242" height="432"> <img src="./Assets/ScreenshotD.png" width="242" height="432"> <img src="./Assets/ScreenshotE.png" width="242" height="432"> <img src="./Assets/ScreenshotF.png" width="242" height="432">
+<img src="./Screenshots/ScreenshotA.png" width="242" height="432"> <img src="./Screenshots/ScreenshotB.png" width="242" height="432"> <img src="./Screenshots/ScreenshotC.png" width="242" height="432"> <img src="./Screenshots/ScreenshotD.png" width="242" height="432"> <img src="./Screenshots/ScreenshotE.png" width="242" height="432"> <img src="./Screenshots/ScreenshotF.png" width="242" height="432">
 
 ## Layout
 
-The layout of the `InputBarAccessoryView` is made of of 3 `UIStackView`'s and an `InputTextView` (subclass of `UITextView`). The padding of the subviews can be easily adjusted by changing the `padding` and `textViewPadding` properties. The constraints will automatically be updated.
+The layout of the `InputBarAccessoryView` is made of of 4  `UIStackView`'s and an `InputTextView` (subclass of `UITextView`). The padding of the subviews can be easily adjusted by changing the `padding` and `textViewPadding` properties. The constraints will automatically be updated.
 
-<img src="./Assets/Layout.png">
+<img src="./Screenshots/Layout.png">
 
-```swift
-H:|-(padding.left)-[UIStackView(leftStackViewWidthContant)]-(textViewPadding.left)-[InputTextView]-(textViewPadding.right)-[UIStackView(rightStackViewWidthContant)]-(padding.right)-|
-
-V:|-(topStackViewPadding.top)-[UIStackView]-(topStackViewPadding.bottom)-[SeparatorLine]-(padding.top)-[InputTextView]-(textViewPadding.bottom)-[UIStackView]-(padding.bottom)-|
-```
-
-It is important to note that each of the `UIStackView`'s to the left and right of the `InputTextView` are anchored by a width constraint. This way the `InputTextView` will always fill the space inbetween in addition to providing methods that can easily be called to hide all buttons to the right or left of the `InputTextView` by setting the width constraint constant to 0. The top `UIStackView`'s height is also constrained,
+It is important to note that each of the `UIStackView`'s to the left and right of the `InputTextView` are anchored by a width constraint. This way the `InputTextView` will always fill the space inbetween in addition to providing methods that can easily be called to hide all buttons to the right or left of the `InputTextView` by setting the width constraint constant to 0. The bottom and top stack views are not height constraint and rely on their `intrinsicContentSize`
 
 ```swift
 func setLeftStackViewWidthConstant(to newValue: CGFloat, animated: Bool)
 
 func setRightStackViewWidthConstant(to newValue: CGFloat, animated: Bool)
-
-func setTopStackViewHeightConstant(to newValue: CGFloat, animated: Bool)
 ```
 
 
@@ -79,7 +81,7 @@ func autocomplete(_ autocompleteManager: AutocompleteManager, autocompleteTextFo
 func autocomplete(_ autocompleteManager: AutocompleteManager, tableView: UITableView, cellForRowAt indexPath: IndexPath, for arguments: (char: Character, filterText: String, autocompleteText: String)) -> UITableViewCell
 ```
 
-### AutocompleteManagerDataSource
+### AutocompleteManagerDelegate
 
 ```swift
 func autocomplete(_ autocompleteManager: AutocompleteManager, didComplete prefix: Character, with text: String)
@@ -141,20 +143,25 @@ func inputBar(_ inputBar: InputBarAccessoryView, textViewTextDidChangeTo text: S
 func inputBar(_ inputBar: InputBarAccessoryView, didSwipeTextViewWith gesture: UISwipeGestureRecognizer)
 ```
 
-## Planned Features
-
-- [X] Autocomplete
-- [ ] Image view picker
-- [ ] Image support in the InputTextView
-- [ ] Text markup support in the InputTextView
-
 Have a suggestion? Make a PR!
 
 ## Changelog
 
+- 1.2.0
+        - Better XCode docs
+        - `InputItem` is now a protocol that you can give to the `InputBarAccessoryView`
+        - `InputManager` is now a protocol that you can conform to make a plugin
+        - `AutocompleteManager` and `AttactchmentManager` are no longer members of  `InputBarAccessoryView` by default. You will need to create them and assign them to the `inputManager` property of the `InputBarAccessoryView`
+- 1.1.2
+        - Fixed issue where adjusting the `InputTextView`'s placeholder text alignment didn't work
+        - Fixed iPhone X support where the home indicator overlapped the `InputTextView`
+- 1.1.1
+        - AutocompleteManager bug fixes and customization improvements
+- 1.1.0
+        - AttactchmentManager (Beta)
 - 1.0.0
-	- A more refined autocomplete
-	- Layout bug fixes
+	- A more refined AutocompleteManager
+	- Auto-layout bug fixes
 
 *pre-release versions not documented*
 
@@ -164,6 +171,7 @@ Have a suggestion? Make a PR!
 <p>
 	<img src="https://github.com/nathantannar4/NTComponents/raw/master/NTComponents/Assets/Nathan.png" width="100" height="100">
 </p>
+
 **Nathan Tannar** - [https://nathantannar.me](https://nathantannar.me)
 
 ## License
